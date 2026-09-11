@@ -55,6 +55,17 @@ class ACInfinityFan(CoordinatorEntity[ACInfinityDataUpdateCoordinator], FanEntit
     )
     _attr_preset_modes = [PRESET_AUTO_MODE, PRESET_ON_MODE]
 
+    @property
+    def is_on(self) -> bool | None:
+        """Return true only if fan is actually spinning.
+
+        HA's base FanEntity falls back to `percentage > 0 or preset_mode is
+        not None` when this isn't overridden — which reports "on" the moment
+        any preset_mode is set, even for the intentionally-idle Auto case
+        below. Overriding this makes _attr_is_on authoritative.
+        """
+        return self._attr_is_on
+
     def __init__(
         self,
         coordinator: ACInfinityDataUpdateCoordinator,
