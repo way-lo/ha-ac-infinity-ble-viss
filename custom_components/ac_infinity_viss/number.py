@@ -40,7 +40,7 @@ class ACInfinityNumber(
     _attr_native_min_value = 0
     _attr_native_max_value = 10
     _attr_native_step = 1
-    _attr_mode = NumberMode.BOX
+    _attr_mode = NumberMode.SLIDER
 
     def __init__(
         self,
