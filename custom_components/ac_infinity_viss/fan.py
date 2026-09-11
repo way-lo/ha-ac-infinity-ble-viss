@@ -25,6 +25,11 @@ from .vendor.ac_infinity_ble import ACInfinityController
 
 SPEED_RANGE = (1, 10)
 
+PRESET_AUTO_MODE = "Auto"
+PRESET_ON_MODE = "On"
+WORK_TYPE_ON = 2
+WORK_TYPE_AUTO = 3
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -46,7 +51,9 @@ class ACInfinityFan(CoordinatorEntity[ACInfinityDataUpdateCoordinator], FanEntit
         FanEntityFeature.SET_SPEED
         | FanEntityFeature.TURN_ON
         | FanEntityFeature.TURN_OFF
+        | FanEntityFeature.PRESET_MODE
     )
+    _attr_preset_modes = [PRESET_AUTO_MODE, PRESET_ON_MODE]
 
     def __init__(
         self,
@@ -83,7 +90,10 @@ class ACInfinityFan(CoordinatorEntity[ACInfinityDataUpdateCoordinator], FanEntit
         preset_mode: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Turn on, optionally at a requested percentage."""
+        """Turn on, optionally at a requested percentage or preset."""
+        if preset_mode is not None:
+            await self.async_set_preset_mode(preset_mode)
+            return
         speed = None
         if percentage is not None:
             speed = math.ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
@@ -93,14 +103,40 @@ class ACInfinityFan(CoordinatorEntity[ACInfinityDataUpdateCoordinator], FanEntit
         """Turn off without overwriting the stored ON speed."""
         await self._device.turn_off()
 
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Select Auto or On mode without rewriting either saved speed preset."""
+        if preset_mode == PRESET_AUTO_MODE:
+            await self._device.set_mode_auto()
+        elif preset_mode == PRESET_ON_MODE:
+            await self._device.turn_on(None)
+        else:
+            raise ValueError(f"Unsupported preset mode: {preset_mode}")
+
     @callback
     def _async_update_attrs(self) -> None:
         """Update Home Assistant state from the controller model."""
-        self._attr_is_on = self._device.is_on
-        speed = self._device.speed
-        self._attr_percentage = (
-            ranged_value_to_percentage(SPEED_RANGE, speed) if speed > 0 else 0
-        )
+        work_type = self._device.state.work_type
+        fan_speed = self._device.state.fan
+        if work_type == WORK_TYPE_AUTO:
+            self._attr_preset_mode = PRESET_AUTO_MODE
+            # Speed 1 is the range floor, not really "spinning" — treat it as
+            # idle so the icon doesn't animate while auto-mode is just waiting.
+            if fan_speed and fan_speed > 1:
+                self._attr_is_on = True
+                self._attr_percentage = ranged_value_to_percentage(SPEED_RANGE, fan_speed)
+            else:
+                self._attr_is_on = False
+                self._attr_percentage = 0
+        elif work_type == WORK_TYPE_ON:
+            self._attr_is_on = True
+            self._attr_preset_mode = PRESET_ON_MODE
+            self._attr_percentage = (
+                ranged_value_to_percentage(SPEED_RANGE, fan_speed) if fan_speed else 0
+            )
+        else:
+            self._attr_is_on = False
+            self._attr_preset_mode = None
+            self._attr_percentage = 0
 
     @callback
     def _handle_coordinator_update(self) -> None:

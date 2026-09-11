@@ -257,6 +257,10 @@ class ACInfinityController:
         """Select OFF without rewriting either saved speed preset."""
         await self._set_mode(1)
 
+    async def set_mode_auto(self) -> None:
+        """Select AUTO without rewriting either saved speed preset."""
+        await self._set_mode(3)
+
     async def _set_mode(self, work_type: int) -> None:
         """Change only mode; physical telemetry confirms the resulting output."""
         await self._ensure_connected()

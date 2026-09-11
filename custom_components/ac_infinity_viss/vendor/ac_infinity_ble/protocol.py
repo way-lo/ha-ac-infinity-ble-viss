@@ -209,9 +209,9 @@ class Protocol:
         return self._add_head(command, 3, sequence)
 
     def set_mode(self, type: int, work_type: int, b: int, sequence: int) -> bytes:
-        """Select OFF or ON without changing either stored speed preset."""
-        if work_type not in [1, 2]:
-            raise ValueError("Work type must be 1 (off) or 2 (on)")
+        """Select OFF, ON, or AUTO without changing either stored speed preset."""
+        if work_type not in [1, 2, 3]:
+            raise ValueError("Work type must be 1 (off), 2 (on), or 3 (auto)")
         command = [16, 1, work_type]
         if type in [7, 9, 11, 12]:
             command += [255, b]
