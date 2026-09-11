@@ -190,7 +190,7 @@ class Protocol:
             raise ValueError(f"AC Infinity rejected SET parameters: {failures}")
 
     def get_model_data(self, type: int, b: int, sequence: int) -> bytes:
-        command = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+        command = [16, 17, 18, 19, 20, 21, 22, 23]
         if type in [7, 9, 11, 12]:
             command += [255, b]
         return self._add_head(command, 1, sequence)

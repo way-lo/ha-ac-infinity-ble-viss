@@ -229,20 +229,21 @@ class ACInfinityController:
             self._state.level_off = values[0x11][0] & 0x0F
             self._state.level_on = values[0x12][0] & 0x0F
             # ON/OFF levels are presets, not measurements of current output.
-            if switches := values.get(0x13):
-                switches = switches[0]
-                self._state.auto_high_temp_enabled = bool(switches & 8)
-                self._state.auto_low_temp_enabled = bool(switches & 4)
-                self._state.auto_high_humidity_enabled = bool(switches & 2)
-                self._state.auto_low_humidity_enabled = bool(switches & 1)
-            if high_temp := values.get(0x15):
-                self._state.auto_high_temp = high_temp[0]
-            if low_temp := values.get(0x17):
-                self._state.auto_low_temp = low_temp[0]
-            if high_hum := values.get(0x18):
-                self._state.auto_high_humidity = high_hum[0]
-            if low_hum := values.get(0x19):
-                self._state.auto_low_humidity = low_hum[0]
+            if config := values.get(0x13):
+                # Confirmed via live log: 0x13 holds all seven auto-mode
+                # fields as one blob, in the exact order the SET command
+                # sends them: [switches, high_f, high_c, low_f, low_c,
+                # high_hum, low_hum]. Not one field per parameter ID.
+                if len(config) >= 7:
+                    switches = config[0]
+                    self._state.auto_high_temp_enabled = bool(switches & 8)
+                    self._state.auto_low_temp_enabled = bool(switches & 4)
+                    self._state.auto_high_humidity_enabled = bool(switches & 2)
+                    self._state.auto_low_humidity_enabled = bool(switches & 1)
+                    self._state.auto_high_temp = config[2]
+                    self._state.auto_low_temp = config[4]
+                    self._state.auto_high_humidity = config[5]
+                    self._state.auto_low_humidity = config[6]
             self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
 
     async def turn_on(self, speed: int | None = None) -> None:
