@@ -17,7 +17,7 @@ from .coordinator import ACInfinityDataUpdateCoordinator
 from .models import ACInfinityData
 from .vendor.ac_infinity_ble import ACInfinityController, DeviceInfo
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.FAN, Platform.NUMBER]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.FAN, Platform.NUMBER, Platform.SWITCH]
 _LOGGER = logging.getLogger(__name__)
 SETUP_TIMEOUT = 55
 STALE_CONNECTION_TIMEOUT = 10

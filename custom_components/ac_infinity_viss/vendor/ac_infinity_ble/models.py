@@ -22,3 +22,11 @@ class DeviceInfo:
     work_type: int | None = None
     level_on: int | None = None
     level_off: int | None = None
+    auto_high_temp_enabled: bool | None = None
+    auto_low_temp_enabled: bool | None = None
+    auto_high_humidity_enabled: bool | None = None
+    auto_low_humidity_enabled: bool | None = None
+    auto_high_temp: int | None = None
+    auto_low_temp: int | None = None
+    auto_high_humidity: int | None = None
+    auto_low_humidity: int | None = None

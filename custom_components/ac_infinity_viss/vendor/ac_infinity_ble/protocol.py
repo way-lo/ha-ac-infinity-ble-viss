@@ -190,7 +190,7 @@ class Protocol:
             raise ValueError(f"AC Infinity rejected SET parameters: {failures}")
 
     def get_model_data(self, type: int, b: int, sequence: int) -> bytes:
-        command = [16, 17, 18, 19, 20, 21, 22, 23]
+        command = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
         if type in [7, 9, 11, 12]:
             command += [255, b]
         return self._add_head(command, 1, sequence)
@@ -232,6 +232,49 @@ class Protocol:
             raise ValueError("Value must be between 0 and 10")
 
         command = [parameter, 1, value]
+        if type in [7, 9, 11, 12]:
+            command += [255, b]
+        return self._add_head(command, 3, sequence)
+
+    def set_auto_mode_config(
+        self,
+        type: int,
+        high_temp_enabled: bool,
+        low_temp_enabled: bool,
+        high_humidity_enabled: bool,
+        low_humidity_enabled: bool,
+        high_temp_f: int,
+        high_temp_c: int,
+        low_temp_f: int,
+        low_temp_c: int,
+        high_humidity: int,
+        low_humidity: int,
+        b: int,
+        sequence: int,
+    ) -> bytes:
+        """Write all seven auto-mode threshold/trigger fields at once.
+
+        The controller only accepts this as a single bundled write — there is
+        no way to change one field without resending the rest. Callers must
+        supply the current value for every field they aren't changing.
+        """
+        switches = (
+            (8 if high_temp_enabled else 0)
+            | (4 if low_temp_enabled else 0)
+            | (2 if high_humidity_enabled else 0)
+            | (1 if low_humidity_enabled else 0)
+        )
+        command = [
+            19,
+            7,
+            switches,
+            high_temp_f,
+            high_temp_c,
+            low_temp_f,
+            low_temp_c,
+            high_humidity,
+            low_humidity,
+        ]
         if type in [7, 9, 11, 12]:
             command += [255, b]
         return self._add_head(command, 3, sequence)

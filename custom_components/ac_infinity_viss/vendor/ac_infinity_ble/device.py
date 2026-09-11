@@ -171,6 +171,26 @@ class ACInfinityController:
         return self._state.level_on or 0
 
     @property
+    def auto_high_temp_enabled(self) -> bool | None:
+        """Whether the auto-mode high-temperature trigger is enabled."""
+        return self._state.auto_high_temp_enabled
+
+    @property
+    def auto_low_temp_enabled(self) -> bool | None:
+        """Whether the auto-mode low-temperature trigger is enabled."""
+        return self._state.auto_low_temp_enabled
+
+    @property
+    def auto_high_temp(self) -> int | None:
+        """Auto-mode high-temperature threshold, in Celsius."""
+        return self._state.auto_high_temp
+
+    @property
+    def auto_low_temp(self) -> int | None:
+        """Auto-mode low-temperature threshold, in Celsius."""
+        return self._state.auto_low_temp
+
+    @property
     def rssi(self) -> int | None:
         """Get the rssi of the device."""
         if self._advertisement_data:
@@ -200,10 +220,29 @@ class ACInfinityController:
             values = self._protocol.parse_model_response(
                 data, sequence, self._response_port
             )
+            _LOGGER.debug(
+                "%s: Model response parameters: %s",
+                self.name,
+                {k: v.hex() for k, v in values.items()},
+            )
             self._state.work_type = values[0x10][0]
             self._state.level_off = values[0x11][0] & 0x0F
             self._state.level_on = values[0x12][0] & 0x0F
             # ON/OFF levels are presets, not measurements of current output.
+            if 0x13 in values:
+                switches = values[0x13][0]
+                self._state.auto_high_temp_enabled = bool(switches & 8)
+                self._state.auto_low_temp_enabled = bool(switches & 4)
+                self._state.auto_high_humidity_enabled = bool(switches & 2)
+                self._state.auto_low_humidity_enabled = bool(switches & 1)
+            if 0x15 in values:
+                self._state.auto_high_temp = values[0x15][0]
+            if 0x17 in values:
+                self._state.auto_low_temp = values[0x17][0]
+            if 0x18 in values:
+                self._state.auto_high_humidity = values[0x18][0]
+            if 0x19 in values:
+                self._state.auto_low_humidity = values[0x19][0]
             self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
 
     async def turn_on(self, speed: int | None = None) -> None:
@@ -282,6 +321,88 @@ class ACInfinityController:
         self._protocol.parse_set_response(response, sequence, self._response_port)
         self._state.level_on = value
         self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
+
+    async def _async_set_auto_mode(
+        self,
+        *,
+        high_temp_enabled: bool | None = None,
+        low_temp_enabled: bool | None = None,
+        high_temp: float | None = None,
+        low_temp: float | None = None,
+    ) -> None:
+        """Write the auto-mode config, preserving any field not being changed.
+
+        The controller only accepts all seven fields in one packet, so every
+        call resends the full current config with just the requested field(s)
+        overridden.
+        """
+        if self._state.auto_high_temp_enabled is None:
+            raise ValueError(
+                "Auto-mode configuration has not been read yet; call "
+                "update() at least once before changing it"
+            )
+
+        def c_to_f(celsius: float) -> int:
+            return round((celsius * 9.0 / 5.0) + 32.0)
+
+        new_high_temp_enabled = (
+            self._state.auto_high_temp_enabled
+            if high_temp_enabled is None
+            else high_temp_enabled
+        )
+        new_low_temp_enabled = (
+            self._state.auto_low_temp_enabled
+            if low_temp_enabled is None
+            else low_temp_enabled
+        )
+        new_high_temp = (
+            self._state.auto_high_temp if high_temp is None else round(high_temp)
+        )
+        new_low_temp = (
+            self._state.auto_low_temp if low_temp is None else round(low_temp)
+        )
+
+        await self._ensure_connected()
+        _LOGGER.debug("%s: Set auto mode config", self.name)
+        sequence = self.sequence
+        command = self._protocol.set_auto_mode_config(
+            self._state.type,
+            new_high_temp_enabled,
+            new_low_temp_enabled,
+            bool(self._state.auto_high_humidity_enabled),
+            bool(self._state.auto_low_humidity_enabled),
+            c_to_f(new_high_temp),
+            new_high_temp,
+            c_to_f(new_low_temp),
+            new_low_temp,
+            self._state.auto_high_humidity or 0,
+            self._state.auto_low_humidity or 0,
+            self._port,
+            sequence,
+        )
+        response = await self._send_command(command)
+        self._protocol.parse_set_response(response, sequence, self._response_port)
+        self._state.auto_high_temp_enabled = new_high_temp_enabled
+        self._state.auto_low_temp_enabled = new_low_temp_enabled
+        self._state.auto_high_temp = new_high_temp
+        self._state.auto_low_temp = new_low_temp
+        self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
+
+    async def async_set_auto_high_temp(self, value: float) -> None:
+        """Set the auto-mode high-temperature threshold, in Celsius."""
+        await self._async_set_auto_mode(high_temp=value)
+
+    async def async_set_auto_low_temp(self, value: float) -> None:
+        """Set the auto-mode low-temperature threshold, in Celsius."""
+        await self._async_set_auto_mode(low_temp=value)
+
+    async def async_set_auto_mode_high_temp_enabled(self, enabled: bool) -> None:
+        """Enable or disable the auto-mode high-temperature trigger."""
+        await self._async_set_auto_mode(high_temp_enabled=enabled)
+
+    async def async_set_auto_mode_low_temp_enabled(self, enabled: bool) -> None:
+        """Enable or disable the auto-mode low-temperature trigger."""
+        await self._async_set_auto_mode(low_temp_enabled=enabled)
 
     async def stop(self) -> None:
         """Stop the controller."""

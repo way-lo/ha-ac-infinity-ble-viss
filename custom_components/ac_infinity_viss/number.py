@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from homeassistant.components.number import NumberEntity, NumberMode
+from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
@@ -27,6 +28,8 @@ async def async_setup_entry(
         [
             MinSpeedNumber(data.coordinator, data.device),
             MaxSpeedNumber(data.coordinator, data.device),
+            AutoHighTempNumber(data.coordinator, data.device),
+            AutoLowTempNumber(data.coordinator, data.device),
         ]
     )
 
@@ -111,3 +114,51 @@ class MaxSpeedNumber(ACInfinityNumber):
     async def async_set_native_value(self, value: float) -> None:
         """Write the new maximum speed preset to the controller."""
         await self._device.async_set_max_speed(int(value))
+
+
+class ACInfinityAutoTempNumber(ACInfinityNumber):
+    """Base class for the two auto-mode temperature thresholds."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_device_class = NumberDeviceClass.TEMPERATURE
+    _attr_native_min_value = 0
+    _attr_native_max_value = 90
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+
+
+class AutoHighTempNumber(ACInfinityAutoTempNumber):
+    """Auto-mode high-temperature threshold."""
+
+    _attr_name = "Auto Mode High Temperature"
+    _attr_icon = "mdi:thermometer-high"
+
+    def __init__(self, coordinator, device) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.address}_auto_high_temp"
+        self._async_update_attrs()
+
+    @callback
+    def _async_update_attrs(self) -> None:
+        self._attr_native_value = self._device.auto_high_temp
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self._device.async_set_auto_high_temp(value)
+
+
+class AutoLowTempNumber(ACInfinityAutoTempNumber):
+    """Auto-mode low-temperature threshold."""
+
+    _attr_name = "Auto Mode Low Temperature"
+    _attr_icon = "mdi:thermometer-low"
+
+    def __init__(self, coordinator, device) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.address}_auto_low_temp"
+        self._async_update_attrs()
+
+    @callback
+    def _async_update_attrs(self) -> None:
+        self._attr_native_value = self._device.auto_low_temp
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self._device.async_set_auto_low_temp(value)
