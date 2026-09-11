@@ -1,6 +1,6 @@
-"""Constants for the ac_infinity integration."""
+"""Constants for the ac_infinity_viss integration."""
 
-DOMAIN = "ac_infinity"
+DOMAIN = "ac_infinity_viss"
 CONF_PORT = "port"
 
 DEVICE_TIMEOUT = 30

@@ -62,22 +62,25 @@ The implementation has been live-protocol tested with a Bluetooth Controller
 
 ### HACS custom repository (recommended)
 
-[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=viss&repository=ha-ac-infinity-ble&category=integration)
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=way-lo&repository=ha-ac-infinity-ble-viss&category=integration)
 
 1. Open **HACS → ⋮ → Custom repositories**.
-2. Add `https://github.com/viss/ha-ac-infinity-ble` as an **Integration**.
-3. Find **AC Infinity**, choose **Download**, and restart Home Assistant.
-4. Open **Settings → Devices & services → Add integration → AC Infinity**.
+2. Add `https://github.com/way-lo/ha-ac-infinity-ble-viss` as an **Integration**.
+3. Find **AC Infinity (Viss)**, choose **Download**, and restart Home Assistant.
+4. Open **Settings → Devices & services → Add integration → AC Infinity (Viss)**.
 
 ### Manual installation
 
-1. Remove or disable the old `ac_infinity` custom integration files.
-2. Copy `custom_components/ac_infinity` from this repository to
-   `/config/custom_components/ac_infinity` on Home Assistant.
-3. Restart Home Assistant.
-4. Force-close the AC Infinity phone app. The controller accepts one Bluetooth
-   client, so it will not advertise while the phone owns the connection.
-5. Open **Settings → Devices & services → Add integration → AC Infinity** and
+1. Copy `custom_components/ac_infinity_viss` from this repository to
+   `/config/custom_components/ac_infinity_viss` on Home Assistant. This domain
+   is distinct from `ac_infinity_airtap` and other AC Infinity integrations,
+   so it can be installed alongside them for A/B testing.
+2. Restart Home Assistant.
+3. Force-close the AC Infinity phone app. The controller accepts one Bluetooth
+   client, so it will not advertise while the phone owns the connection. If
+   another AC Infinity integration currently holds the connection, disable
+   that config entry first.
+4. Open **Settings → Devices & services → Add integration → AC Infinity (Viss)** and
    choose the discovered controller.
 
 Home Assistant 2025.2 or newer is required. A local Bluetooth adapter or an
@@ -133,8 +136,8 @@ Enable debug logging when troubleshooting discovery or control:
 ```yaml
 logger:
   logs:
-    custom_components.ac_infinity: debug
-    custom_components.ac_infinity.vendor.ac_infinity_ble: debug
+    custom_components.ac_infinity_viss: debug
+    custom_components.ac_infinity_viss.vendor.ac_infinity_ble: debug
 ```
 
 If setup finds nothing, first verify that the phone app is force-closed and

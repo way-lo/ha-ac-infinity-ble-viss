@@ -11,29 +11,29 @@ import unittest
 from unittest.mock import AsyncMock
 
 
-COMPONENT = Path(__file__).parents[1] / "custom_components" / "ac_infinity"
+COMPONENT = Path(__file__).parents[1] / "custom_components" / "ac_infinity_viss"
 
 # Load the discovery module without importing Home Assistant's integration
 # package; the test container intentionally does not install all of HA Core.
 custom_components = types.ModuleType("custom_components")
 custom_components.__path__ = [str(COMPONENT.parent)]
-ac_infinity = types.ModuleType("custom_components.ac_infinity")
-ac_infinity.__path__ = [str(COMPONENT)]
+ac_infinity_viss = types.ModuleType("custom_components.ac_infinity_viss")
+ac_infinity_viss.__path__ = [str(COMPONENT)]
 sys.modules.setdefault("custom_components", custom_components)
-sys.modules.setdefault("custom_components.ac_infinity", ac_infinity)
+sys.modules.setdefault("custom_components.ac_infinity_viss", ac_infinity_viss)
 
-discovery = importlib.import_module("custom_components.ac_infinity.discovery")
+discovery = importlib.import_module("custom_components.ac_infinity_viss.discovery")
 ble = importlib.import_module(
-    "custom_components.ac_infinity.vendor.ac_infinity_ble"
+    "custom_components.ac_infinity_viss.vendor.ac_infinity_ble"
 )
 device_module = importlib.import_module(
-    "custom_components.ac_infinity.vendor.ac_infinity_ble.device"
+    "custom_components.ac_infinity_viss.vendor.ac_infinity_ble.device"
 )
 Protocol = importlib.import_module(
-    "custom_components.ac_infinity.vendor.ac_infinity_ble.protocol"
+    "custom_components.ac_infinity_viss.vendor.ac_infinity_ble.protocol"
 ).Protocol
 crc16 = importlib.import_module(
-    "custom_components.ac_infinity.vendor.ac_infinity_ble.util"
+    "custom_components.ac_infinity_viss.vendor.ac_infinity_ble.util"
 ).crc16
 
 LIVE_ADVERTISEMENT = bytes.fromhex(
