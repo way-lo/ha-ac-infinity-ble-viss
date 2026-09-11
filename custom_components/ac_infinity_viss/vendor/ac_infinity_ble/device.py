@@ -229,20 +229,20 @@ class ACInfinityController:
             self._state.level_off = values[0x11][0] & 0x0F
             self._state.level_on = values[0x12][0] & 0x0F
             # ON/OFF levels are presets, not measurements of current output.
-            if 0x13 in values:
-                switches = values[0x13][0]
+            if switches := values.get(0x13):
+                switches = switches[0]
                 self._state.auto_high_temp_enabled = bool(switches & 8)
                 self._state.auto_low_temp_enabled = bool(switches & 4)
                 self._state.auto_high_humidity_enabled = bool(switches & 2)
                 self._state.auto_low_humidity_enabled = bool(switches & 1)
-            if 0x15 in values:
-                self._state.auto_high_temp = values[0x15][0]
-            if 0x17 in values:
-                self._state.auto_low_temp = values[0x17][0]
-            if 0x18 in values:
-                self._state.auto_high_humidity = values[0x18][0]
-            if 0x19 in values:
-                self._state.auto_low_humidity = values[0x19][0]
+            if high_temp := values.get(0x15):
+                self._state.auto_high_temp = high_temp[0]
+            if low_temp := values.get(0x17):
+                self._state.auto_low_temp = low_temp[0]
+            if high_hum := values.get(0x18):
+                self._state.auto_high_humidity = high_hum[0]
+            if low_hum := values.get(0x19):
+                self._state.auto_low_humidity = low_hum[0]
             self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
 
     async def turn_on(self, speed: int | None = None) -> None:
