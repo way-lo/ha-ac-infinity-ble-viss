@@ -216,3 +216,22 @@ class Protocol:
         if type in [7, 9, 11, 12]:
             command += [255, b]
         return self._add_head(command, 3, sequence)
+
+    def set_parameter(
+        self, type: int, parameter: int, value: int, b: int, sequence: int
+    ) -> bytes:
+        """Write a single stored parameter without changing ON/OFF mode.
+
+        Used for the min/max speed presets (0x11/0x12) that back auto-mode's
+        floor and ceiling. Unlike set_level, this never bundles a mode change
+        into the same packet.
+        """
+        if parameter not in (0x11, 0x12):
+            raise ValueError("Parameter must be 0x11 (min speed) or 0x12 (max speed)")
+        if value not in range(0, 11):
+            raise ValueError("Value must be between 0 and 10")
+
+        command = [parameter, 1, value]
+        if type in [7, 9, 11, 12]:
+            command += [255, b]
+        return self._add_head(command, 3, sequence)

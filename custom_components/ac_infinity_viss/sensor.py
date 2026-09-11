@@ -28,10 +28,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up controller environmental sensors."""
     data: ACInfinityData = hass.data[DOMAIN][entry.entry_id]
-    entities: list[ACInfinitySensor] = [
-        TemperatureSensor(data.coordinator, data.device),
-        HumiditySensor(data.coordinator, data.device),
-    ]
+    entities: list[ACInfinitySensor] = [TemperatureSensor(data.coordinator, data.device)]
+    if data.device.state.type != 6:  # Airtap has no humidity sensor
+        entities.append(HumiditySensor(data.coordinator, data.device))
     if data.device.state.version >= 3 and data.device.state.type in (7, 9, 11, 12):
         entities.append(VpdSensor(data.coordinator, data.device))
     async_add_entities(entities)

@@ -161,6 +161,16 @@ class ACInfinityController:
         return self._state.vpd or 0
 
     @property
+    def min_speed(self) -> int:
+        """Get the stored minimum speed preset (auto-mode floor)."""
+        return self._state.level_off or 0
+
+    @property
+    def max_speed(self) -> int:
+        """Get the stored maximum speed preset (auto-mode ceiling)."""
+        return self._state.level_on or 0
+
+    @property
     def rssi(self) -> int | None:
         """Get the rssi of the device."""
         if self._advertisement_data:
@@ -235,6 +245,42 @@ class ACInfinityController:
         self._protocol.parse_set_response(response, sequence, self._response_port)
         self._state.level_on = speed
         # ACK confirms a setting, not motor output. Notifications update fan.
+        self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
+
+    async def async_set_min_speed(self, value: int) -> None:
+        """Set the stored minimum speed preset (auto-mode floor).
+
+        This does not change the controller's current ON/OFF mode.
+        """
+        if value not in range(0, 11):
+            raise ValueError("Value must be between 0 and 10")
+        await self._ensure_connected()
+        _LOGGER.debug("%s: Set min speed to %s", self.name, value)
+        sequence = self.sequence
+        command = self._protocol.set_parameter(
+            self._state.type, 0x11, value, self._port, sequence
+        )
+        response = await self._send_command(command)
+        self._protocol.parse_set_response(response, sequence, self._response_port)
+        self._state.level_off = value
+        self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
+
+    async def async_set_max_speed(self, value: int) -> None:
+        """Set the stored maximum speed preset (auto-mode ceiling).
+
+        This does not change the controller's current ON/OFF mode.
+        """
+        if value not in range(0, 11):
+            raise ValueError("Value must be between 0 and 10")
+        await self._ensure_connected()
+        _LOGGER.debug("%s: Set max speed to %s", self.name, value)
+        sequence = self.sequence
+        command = self._protocol.set_parameter(
+            self._state.type, 0x12, value, self._port, sequence
+        )
+        response = await self._send_command(command)
+        self._protocol.parse_set_response(response, sequence, self._response_port)
+        self._state.level_on = value
         self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
 
     async def stop(self) -> None:
