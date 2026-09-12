@@ -4,6 +4,27 @@ All notable changes to this fork, relative to the upstream
 [`Viss/ha-ac-infinity-ble`](https://github.com/Viss/ha-ac-infinity-ble) base, are
 documented here.
 
+## [2.1.1]
+
+### Fixed
+
+- Auto Mode High/Low Temperature now read and write the controller's
+  Fahrenheit byte directly, instead of deriving Fahrenheit from a
+  round-tripped whole-degree-Celsius value. The protocol carries both an F
+  and a C byte per threshold; the F byte is what the controller itself
+  treats as authoritative (matching whatever display unit it's configured
+  for), so setting e.g. 76°F no longer silently reads back as 75°F after the
+  next poll. The Celsius byte is still sent on writes (derived from the
+  Fahrenheit value) since the packet format requires it, but nothing reads
+  it back, so its rounding no longer matters.
+- Home Assistant's built-in Celsius/Fahrenheit conversion for `number`
+  entities with `device_class: temperature` still works correctly on top of
+  this for anyone whose Home Assistant unit system is set to Celsius — HA
+  converts their input to Fahrenheit before it reaches this integration, so
+  the fix benefits both unit systems, not just Fahrenheit users. (Celsius
+  users will see ~0.56°C-sized steps rather than clean whole-Celsius
+  increments, since the underlying native step is fixed at 1°F.)
+
 ## [2.1.0]
 
 ### Added
@@ -46,3 +67,4 @@ documented here.
   integration sends; it appears to be a firmware-level side effect of writing
   to that parameter block, consistent with the OEM app only exposing these
   settings from within Auto mode in the first place.
+
