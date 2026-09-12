@@ -182,12 +182,12 @@ class ACInfinityController:
 
     @property
     def auto_high_temp(self) -> int | None:
-        """Auto-mode high-temperature threshold, in Celsius."""
+        """Auto-mode high-temperature threshold, in Fahrenheit."""
         return self._state.auto_high_temp
 
     @property
     def auto_low_temp(self) -> int | None:
-        """Auto-mode low-temperature threshold, in Celsius."""
+        """Auto-mode low-temperature threshold, in Fahrenheit."""
         return self._state.auto_low_temp
 
     @property
@@ -240,8 +240,8 @@ class ACInfinityController:
                     self._state.auto_low_temp_enabled = bool(switches & 4)
                     self._state.auto_high_humidity_enabled = bool(switches & 2)
                     self._state.auto_low_humidity_enabled = bool(switches & 1)
-                    self._state.auto_high_temp = config[2]
-                    self._state.auto_low_temp = config[4]
+                    self._state.auto_high_temp = config[1]
+                    self._state.auto_low_temp = config[3]
                     self._state.auto_high_humidity = config[5]
                     self._state.auto_low_humidity = config[6]
             self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
@@ -347,8 +347,8 @@ class ACInfinityController:
                 "update() at least once before changing it"
             )
 
-        def c_to_f(celsius: float) -> int:
-            return round((celsius * 9.0 / 5.0) + 32.0)
+        def f_to_c(fahrenheit: float) -> int:
+            return round((fahrenheit - 32.0) * 5.0 / 9.0)
 
         new_high_temp_enabled = (
             self._state.auto_high_temp_enabled
@@ -376,10 +376,10 @@ class ACInfinityController:
             new_low_temp_enabled,
             bool(self._state.auto_high_humidity_enabled),
             bool(self._state.auto_low_humidity_enabled),
-            c_to_f(new_high_temp),
             new_high_temp,
-            c_to_f(new_low_temp),
+            f_to_c(new_high_temp),
             new_low_temp,
+            f_to_c(new_low_temp),
             self._state.auto_high_humidity or 0,
             self._state.auto_low_humidity or 0,
             self._port,
@@ -394,11 +394,11 @@ class ACInfinityController:
         self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
 
     async def async_set_auto_high_temp(self, value: float) -> None:
-        """Set the auto-mode high-temperature threshold, in Celsius."""
+        """Set the auto-mode high-temperature threshold, in Fahrenheit."""
         await self._async_set_auto_mode(high_temp=value)
 
     async def async_set_auto_low_temp(self, value: float) -> None:
-        """Set the auto-mode low-temperature threshold, in Celsius."""
+        """Set the auto-mode low-temperature threshold, in Fahrenheit."""
         await self._async_set_auto_mode(low_temp=value)
 
     async def async_set_auto_mode_high_temp_enabled(self, enabled: bool) -> None:

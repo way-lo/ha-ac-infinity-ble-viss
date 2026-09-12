@@ -116,30 +116,19 @@ class MaxSpeedNumber(ACInfinityNumber):
         await self._device.async_set_max_speed(int(value))
 
 
-def _c_to_f(celsius: int) -> int:
-    return round((celsius * 9.0 / 5.0) + 32.0)
-
-
-def _f_to_c(fahrenheit: float) -> int:
-    return round((fahrenheit - 32.0) * 5.0 / 9.0)
-
-
 class ACInfinityAutoTempNumber(ACInfinityNumber):
     """Base class for the two auto-mode temperature thresholds.
 
-    The controller only stores a single whole-degree Celsius byte, but this
-    unit is always Fahrenheit at the entity boundary; conversion happens
-    here, not via HA's automatic unit conversion, so the UI shows real
-    whole-Fahrenheit steps instead of unevenly-spaced converted Celsius
-    steps. Some adjacent Fahrenheit values still round to the same
-    underlying Celsius byte — that's a hardware precision limit, not
-    something this conversion can remove.
+    The controller's protocol carries both an F and a C byte per threshold;
+    the F byte appears to be the one the device itself treats as
+    authoritative (matching whatever display unit it's configured for), so
+    no conversion happens here — this passes the value straight through.
     """
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_device_class = NumberDeviceClass.TEMPERATURE
-    _attr_native_min_value = _c_to_f(0)
-    _attr_native_max_value = _c_to_f(90)
+    _attr_native_min_value = 32
+    _attr_native_max_value = 194
     _attr_native_step = 1
     _attr_native_unit_of_measurement = UnitOfTemperature.FAHRENHEIT
 
@@ -157,11 +146,10 @@ class AutoHighTempNumber(ACInfinityAutoTempNumber):
 
     @callback
     def _async_update_attrs(self) -> None:
-        value = self._device.auto_high_temp
-        self._attr_native_value = None if value is None else _c_to_f(value)
+        self._attr_native_value = self._device.auto_high_temp
 
     async def async_set_native_value(self, value: float) -> None:
-        await self._device.async_set_auto_high_temp(_f_to_c(value))
+        await self._device.async_set_auto_high_temp(value)
 
 
 class AutoLowTempNumber(ACInfinityAutoTempNumber):
@@ -177,8 +165,7 @@ class AutoLowTempNumber(ACInfinityAutoTempNumber):
 
     @callback
     def _async_update_attrs(self) -> None:
-        value = self._device.auto_low_temp
-        self._attr_native_value = None if value is None else _c_to_f(value)
+        self._attr_native_value = self._device.auto_low_temp
 
     async def async_set_native_value(self, value: float) -> None:
-        await self._device.async_set_auto_low_temp(_f_to_c(value))
+        await self._device.async_set_auto_low_temp(value)
